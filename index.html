@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Asisten Kecil Niu Niu 💜</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to bottom right, #0f0f2e, #1a1a3c);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      text-align: center;
+    }
+    img {
+      width: 180px;
+      margin: 10px auto;
+      image-rendering: pixelated;
+    }
+    input, button {
+      padding: 10px;
+      font-size: 16px;
+      margin-top: 10px;
+      border-radius: 8px;
+      border: none;
+    }
+    input {
+      width: 200px;
+    }
+    button {
+      background: #ff4d6d;
+      color: #fff;
+      cursor: pointer;
+    }
+    #balasan {
+      margin-top: 20px;
+      font-style: italic;
+      max-width: 80%;
+      white-space: pre-line;
+    }
+  </style>
+</head>
+<body>
+  <h1>Halo Kapten Nanooo 💜</h1>
+  <img src="pixil-gif-drawing-unscreen.gif" alt="Niu Niu" />
+  <p>Apa yang mau Niu Niu atur hari ini?</p>
+  <input type="text" id="task" placeholder="Planner, tugas, belajar...">
+  <button onclick="kirimKeAI()" id="btnKirim">Kirim</button>
+  <div id="loading" style="display:none; font-style: italic;">⏳ Niu Niu lagi mikir... tunggu bentar ya Kapten~ 🛌</div>
+  <div id="balasan"></div>
+
+  <script>
+    function playSuara(teks) {
+      const suara = new SpeechSynthesisUtterance(teks);
+      suara.lang = 'id-ID';
+      suara.pitch = 1.2;
+      suara.rate = 1.05;
+      suara.voice = speechSynthesis.getVoices().find(v => v.lang === 'id-ID') || null;
+      window.speechSynthesis.speak(suara);
+    }
+
+    async function kirimKeAI() {
+      const task = document.getElementById("task").value;
+      const balasan = document.getElementById("balasan");
+      const loading = document.getElementById("loading");
+      const tombol = document.getElementById("btnKirim");
+
+      if (!task) {
+        balasan.innerText = "Tulis dulu dong, Kapten~ 🥺";
+        playSuara("Tulis dulu dong, Kapten Nanooo~");
+        return;
+      }
+
+      loading.style.display = "block";
+      balasan.innerText = "";
+      tombol.disabled = true;
+
+      try {
+        const response = await fetch("http://127.0.0.1:5000/ask-planner", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ task })
+        });
+
+        const data = await response.json();
+
+        if (data.reply) {
+          balasan.innerText = data.reply;
+          playSuara("Baik Kapten Nanooo, ini jadwalnya ya. " + data.reply);
+        } else {
+          throw new Error("Balasan kosong");
+        }
+
+      } catch (error) {
+        console.error("Error:", error);
+
+        if (error.message.includes("429")) {
+          balasan.innerText = "Server lagi rame, Kapten 😵 Coba bentar lagi ya~";
+          playSuara("Maaf Kapten, server-nya lagi rame banget. Ulangi sebentar lagi yaa~");
+        } else {
+          balasan.innerText = "Niu Niu lagi error 😭 Coba ulangi yaa~";
+          playSuara("Hiks... maaf, Niu Niu lagi bingung. Coba ulangi yaa~");
+        }
+      } finally {
+        loading.style.display = "none";
+        tombol.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>
